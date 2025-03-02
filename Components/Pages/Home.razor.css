@@ -1,0 +1,29 @@
+﻿.mclay-game button {
+    width: 100px;
+    height: 3rem;
+}
+
+.mclay-table {
+    width: 452px;
+    height: 280px;
+}
+
+    .mclay-table .item {
+        width: 3rem;
+        height: 3rem;
+    }
+
+    .mclay-table .item {
+        width: 3rem;
+        height: 3rem;
+    }
+
+        .mclay-table .item.selected {
+            background-color: darkorange;
+        }
+
+        .mclay-table .item img {
+            margin: 0.25rem;
+            width: 2.5rem;
+            height: 2.5rem;
+        }

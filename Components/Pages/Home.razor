@@ -1,0 +1,194 @@
+﻿@page "/"
+
+<PageTitle>MCLAY</PageTitle>
+
+<FluentSwitch @bind-Value=cheating Label="Cheating" Class="pb-3"/>
+
+<FluentStack Orientation="Orientation.Horizontal" Class="mclay-game">
+
+    @switch (gameState)
+    {
+        case GameState.InProgress:
+            {
+                <FluentStack Orientation="Orientation.Vertical" VerticalGap="2">
+                    <div class="mclay-table">
+                        @for(var i = 0; i < ROUND_COUNT; i++)
+                        {
+                            var row = i; // Closure see: https://stackoverflow.com/a/35365405/6671523
+                            var isCurrentRound = (row + 1) == currentRound;
+                            <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="2">
+                                <div class="my-auto text-nowrap">Round @(row+1)</div>
+                                @for (var j = 0; j < 8; j++)
+                                {
+                                    var column = j;
+                                    var itemSelected = row == currentRound - 1 && column == currentItemIndex;
+                                    <div class="item @(itemSelected ? "selected" : "")">
+                                        <img src="@table[row][column]" />
+                                    </div>
+                                }
+                            </FluentStack>
+                            @if (row != ROUND_COUNT - 1)
+                            {
+                                <FluentDivider Style="width: 100%;" Orientation=Orientation.Horizontal Role="DividerRole.Separator"></FluentDivider>
+                            }
+                        }
+                        <br/>
+                    </div>
+                    <FluentStack Orientation="Orientation.Horizontal">
+                        <FluentButton OnClick="Play" Class="fs-4" Style="width: 100px; height: 3rem;" AutoFocus="true" Appearance="Appearance.Accent">Play</FluentButton>
+                    </FluentStack>
+                </FluentStack>
+                break;
+            }
+        case GameState.Lost:
+            {
+                <FluentStack Orientation="Orientation.Vertical" VerticalAlignment="VerticalAlignment.SpaceBetween">
+                    <div class="mclay-table">
+                        <h1> RIP... Try Again </h1>
+                        <div>
+                            <img src="/img/spriteSad.png" /> 
+                        </div>
+                    </div>
+                    <FluentStack Orientation="Orientation.Horizontal">
+                        <FluentButton OnClick="PlayAgain" Class="fs-4" Style="width: 100px; height: 3rem;" AutoFocus="true" Appearance="Appearance.Accent">Play Again</FluentButton>
+                    </FluentStack>
+                </FluentStack>
+                break;
+            }
+        case GameState.Won:
+            {
+                <FluentStack Orientation="Orientation.Vertical">
+                    <div class="mclay-table">
+                        <h1>CONGRATZ!</h1>
+                        <div>
+                            <img src="/img/spriteHappy.png" /> 
+                        </div>
+                        <h1>YOUR REWARD</h1>
+                        <div>
+                            <img src="@GetCurrentItem()" /> 
+                        </div>
+                    </div>
+                    <FluentStack Orientation="Orientation.Horizontal">
+                        <FluentButton OnClick="PlayAgain" Class="fs-4" Style="width: 100px; height: 3rem;" AutoFocus="true" Appearance="Appearance.Accent">Play Again</FluentButton>
+                    </FluentStack>
+                </FluentStack>
+                break;
+            }
+            case GameState.OutOfMclays:
+            {
+                <FluentStack Orientation="Orientation.Vertical">
+                    <h1>You are broke</h1>
+                </FluentStack>
+                break;
+            }
+    }
+
+    <FluentStack Orientation="Orientation.Vertical" >
+        <FluentSpacer />
+    </FluentStack>
+
+    <FluentStack Orientation="Orientation.Vertical" >
+        <h1>MClays: @mclayCount</h1>
+        <br/>
+        <h1>Bag</h1>
+        <FluentStack Orientation="Orientation.Horizontal">
+            @foreach (var item in bag)
+            {
+                <div class="item">
+                    <img src="@item" />
+                </div>
+            }
+        </FluentStack>
+
+
+
+    </FluentStack>
+
+</FluentStack>
+
+@code {
+    private const int ROUND_COUNT = 5;
+
+    private Random rng = new Random();
+    private GameState gameState = GameState.InProgress;
+    private int currentRound = 0;
+    private int currentItemIndex = 0; // 0 - 7
+    private int mclayCount = 10;
+    private List<string> bag = new List<string>();
+    private bool cheating = false;
+
+    private string[][] table = new string[ROUND_COUNT][]
+    {
+        new string[]{"/img/sc1.png", "/img/sc2.png","/img/sc1.png", "/img/sc2.png", "/img/sc1.png", "/img/sc2.png", "/img/sc1.png", "/img/sc2.png",  },
+        new string[]{"/img/sc3.png", "/img/sc4.png","/img/sc3.png", "/img/sc4.png", "/img/sc3.png", "/img/sc4.png", "/img/sc3.png", "/img/sc4.png",  },
+        new string[]{"/img/sc1.png", "/img/sc2.png","/img/sc1.png", "/img/sc2.png", "/img/sc1.png", "/img/sc2.png", "/img/sc1.png", "/img/sc2.png",  },
+        new string[]{"/img/sc3.png", "/img/sc4.png","/img/sc3.png", "/img/sc4.png", "/img/sc3.png", "/img/sc4.png", "/img/sc3.png", "/img/sc4.png",  },
+        new string[]{"/img/sc1.png", "/img/sc2.png","/img/sc1.png", "/img/sc2.png", "/img/sc1.png", "/img/sc2.png", "/img/sc1.png", "/img/sc2.png",  }
+    };
+
+    private int[] winRates = new int[ROUND_COUNT] { 100, 80, 70, 60, 30};
+
+    private void Play()
+    {
+        var isRoundSuccess = cheating ? true : rng.Next(100) < winRates[currentRound];
+        if (!isRoundSuccess) // Game lost
+        {
+            if (mclayCount < 1)
+            {
+                gameState = GameState.OutOfMclays;
+            }
+            else
+            {
+                gameState = GameState.Lost;
+                mclayCount--;
+            }
+        }
+        else
+        {
+            currentRound++;
+            currentItemIndex = rng.Next(8); // Pick random item from current round
+            var isLastRound = currentRound == ROUND_COUNT;
+            if (isLastRound) // Game won
+            {
+                gameState = GameState.Won;
+                var loot = GetCurrentItem();
+                bag.Add(loot);
+                mclayCount--;
+            }
+            // else
+            //     ToastService.ShowSuccess($"CONGRATZ, you proceeded to round {currentRound + 1}");
+        }
+
+    }
+
+    private string GetItemClass(int row, int column)
+    {
+        var classess = "item";
+        var isItemSelected = row == currentRound - 1 && column == currentItemIndex;
+        if (isItemSelected)
+            classess += " border border-success";
+
+        return classess;
+    }
+
+    private string GetCurrentItem()
+    {
+        return table[currentRound-1][currentItemIndex];
+    }
+
+    private void PlayAgain()
+    {
+        gameState = GameState.InProgress;
+        currentRound = 0;
+    }
+
+    public enum GameState
+    {
+        InProgress,
+        Lost,
+        Won,
+        OutOfMclays
+
+    }
+
+}
