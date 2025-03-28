@@ -1,4 +1,6 @@
 ﻿@page "/"
+@using mclay.Extensions
+@inject IWebHostEnvironment WebHostEnvironment
 
 <PageTitle>MCLAY</PageTitle>
 
@@ -74,7 +76,7 @@
                 </FluentStack>
                 break;
             }
-            case GameState.OutOfMclays:
+        case GameState.OutOfMclays:
             {
                 <FluentStack Orientation="Orientation.Vertical">
                     <h1>You are broke</h1>
@@ -117,16 +119,14 @@
     private List<string> bag = new List<string>();
     private bool cheating = false;
 
-    private string[][] table = new string[ROUND_COUNT][]
-    {
-        new string[]{"/img/sc1.png", "/img/sc2.png","/img/sc1.png", "/img/sc2.png", "/img/sc1.png", "/img/sc2.png", "/img/sc1.png", "/img/sc2.png",  },
-        new string[]{"/img/sc3.png", "/img/sc4.png","/img/sc3.png", "/img/sc4.png", "/img/sc3.png", "/img/sc4.png", "/img/sc3.png", "/img/sc4.png",  },
-        new string[]{"/img/sc1.png", "/img/sc2.png","/img/sc1.png", "/img/sc2.png", "/img/sc1.png", "/img/sc2.png", "/img/sc1.png", "/img/sc2.png",  },
-        new string[]{"/img/sc3.png", "/img/sc4.png","/img/sc3.png", "/img/sc4.png", "/img/sc3.png", "/img/sc4.png", "/img/sc3.png", "/img/sc4.png",  },
-        new string[]{"/img/sc1.png", "/img/sc2.png","/img/sc1.png", "/img/sc2.png", "/img/sc1.png", "/img/sc2.png", "/img/sc1.png", "/img/sc2.png",  }
-    };
+    private string[][] table;
 
     private int[] winRates = new int[ROUND_COUNT] { 100, 80, 70, 60, 30};
+
+    protected override void OnInitialized()
+    {
+        table = GenerateRandomTable();
+    }
 
     private void Play()
     {
@@ -189,6 +189,22 @@
         Won,
         OutOfMclays
 
+    }
+
+    public string[][] GenerateRandomTable()
+    {
+        var folderPath = Path.Combine(WebHostEnvironment.WebRootPath, "img", "gf_codex_images");
+        var images = Directory.GetFiles(folderPath, "*.png", SearchOption.AllDirectories).Select(x => x.Replace(WebHostEnvironment.WebRootPath + "\\", "")).ToList();
+        var table = new string[ROUND_COUNT][]
+        {
+            new string[]{ images.Random(), images.Random(),images.Random(), images.Random(), images.Random(), images.Random(), images.Random(), images.Random() },
+            new string[]{ images.Random(), images.Random(),images.Random(), images.Random(), images.Random(), images.Random(), images.Random(), images.Random() },
+            new string[]{ images.Random(), images.Random(),images.Random(), images.Random(), images.Random(), images.Random(), images.Random(), images.Random() },
+            new string[]{ images.Random(), images.Random(),images.Random(), images.Random(), images.Random(), images.Random(), images.Random(), images.Random() },
+            new string[]{ images.Random(), images.Random(),images.Random(), images.Random(), images.Random(), images.Random(), images.Random(), images.Random() }
+        };
+
+        return table;
     }
 
 }
